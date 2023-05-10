@@ -99,11 +99,6 @@ images_cols[0].markdown(Mircopredictions_img, unsafe_allow_html=True)
 graphs_container, text_container = st.container().columns([5, 9])
 graphs_container_main = st.empty().container()
 
-CYMBALO_COYOTE="e0a0c29acbf143899df20a20ceaf3556"
-mw = MicroWriter(write_key=CYMBALO_COYOTE)
-stream_name = 'quick_yarx_ibm.json'
-samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
-
 def remove_outliers(data):
     # Calculate the first and third quartiles (Q1 and Q3)
     Q1 = np.percentile(data, 25)
@@ -117,7 +112,25 @@ def remove_outliers(data):
     filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
     return filtered_data
 
-inliers = pd.DataFrame(remove_outliers(samples), columns=[sipmath_name])
+def micropredictions_stock():
+    CYMBALO_COYOTE="e0a0c29acbf143899df20a20ceaf3556"
+    mw = MicroWriter(write_key=CYMBALO_COYOTE)
+    stream_name = 'quick_yarx_ibm.json'
+    samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
+    data = pd.DataFrame(remove_outliers(samples), columns=[sipmath_name])
+    # step = 1 / data.shape[0]
+    # data.index = (data.index + 1)*step
+    return data
+
+def micropredictions_S_P():
+    HEBDOMAD_LEECH='8c386f8221c950008bad5221e9d4ada6'
+    mw = MicroWriter(write_key=HEBDOMAD_LEECH)
+    stream_name = 'rdps_spy.json'
+    samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
+    data = pd.DataFrame(remove_outliers(samples), columns=["S&P"])
+    # step = 1 / data.shape[0]
+    # data.index = (data.index + 1)*step
+    return data
 
 def plot(m, big_plots=None, csv=None, term=None, name=None, key=None):
     # st.write(m)
@@ -286,7 +299,8 @@ def convert_to_JSON(input_df,
                     boundedness,
                     bounds,
                     term_saved,
-                    probs):
+                    probs,
+                    quantile_corr_matrix ):
 
     PySIP.Json(input_df,
                filename,
@@ -295,7 +309,8 @@ def convert_to_JSON(input_df,
                boundedness=boundedness,
                bounds=bounds,
                term_saved=term_saved,
-               probs=probs
+               probs=probs,
+               quantile_corr_matrix=quantile_corr_matrix
                )
 
     with open(filename) as f:
@@ -339,6 +354,14 @@ def preprocess_charts(x,
          big_plots, csv, user_term, name=name, key=key)
 
 def get_micropredictions():
+    HAMOOSE_CHEETAH = '612a4363e8ba2100de3d12e077d0b13e'
+    NAME = 'noaa_wind_speed_46073.json'
+    mr = MicroReader()
+    predictions = mr.get_predictions(name=NAME,write_key=HAMOOSE_CHEETAH,delay=mr.DELAYS[-1])
+    print(predictions)
+    return predictions
+
+def get_micropredictions_SP():
     HAMOOSE_CHEETAH = '612a4363e8ba2100de3d12e077d0b13e'
     NAME = 'noaa_wind_speed_46073.json'
     mr = MicroReader()
@@ -610,18 +633,21 @@ def make_csv_graph(series,
     return None
 # @st.cache
 
-col_name = 'Stock_Value'
+# col_name = 'Stock_Value'
 # micro_data = get_micropredictions()
 # micro_data_df = pd.DataFrame([ p for p in micro_data if p > 0.01 ], columns=[col_name])
-micro_data_df = inliers
+print('descirbe:')
+micro_data_df = pd.concat([micropredictions_S_P().describe().loc[['25%', '50%','75%']], micropredictions_stock().describe().loc[['25%', '50%','75%']]], axis=1)
+micro_data_df.index = [0.25, 0.5, 0.75]
+print(micro_data_df)
 # micro_data_df = get_nyc_data()
 # print(micro_data_df.dtypes)
-print(micro_data_df.dtypes)
-name = micro_data_df.columns[0]
+# print(micro_data_df.dtypes)
+name = micro_data_df.columns[-1]
 # table_container.subheader(f"Preview for {name}")
 # table_container.write(micro_data_df[:10].to_html(
 #     index=False), unsafe_allow_html=True)
-probs=np.nan
+probs=micro_data_df.index
 boundedness='u'
 # bounds=[micro_data_df.iloc[:,0].min()]
 bounds=[micro_data_df.iloc[:,0].min()-0.01, 1.25*micro_data_df.iloc[:,0].max()]
@@ -631,13 +657,15 @@ user_terms=3
 graphs=False
 dependence = 'independent'
 file_name = f'{name}.SIPmath'
-micro_data_df.apply(make_csv_graph,
+micro_data_df[[name]].apply(make_csv_graph,
                 probs=probs,
                 boundedness=boundedness,
                 bounds=bounds,
                 big_plots=big_plots,
                 user_terms=user_terms,
                 graphs=graphs)
+corrs_data = [[1,None],[0.85,1]]            
+correlation_df = pd.DataFrame(corrs_data,columns=["S&P", name],index=["S&P", name])
 text_container.markdown('''
     <p class="big-font"></p>''', unsafe_allow_html=True)
 text_container.markdown('''
@@ -656,7 +684,8 @@ convert_to_JSON(micro_data_df,
                 boundedness,
                 bounds,
                 user_terms,
-                probs)
+                probs,
+                correlation_df)
      
 copy_button = Button(label=f"Copy {file_name} to clipboard.")
 with open(file_name, 'rb') as f:
