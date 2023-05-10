@@ -643,6 +643,7 @@ print(micro_data_df)
 # micro_data_df = get_nyc_data()
 # print(micro_data_df.dtypes)
 # print(micro_data_df.dtypes)
+micro_data_df.columns = micro_data_df.columns.str.replace(' |&', '_')
 name = micro_data_df.columns[-1]
 # table_container.subheader(f"Preview for {name}")
 # table_container.write(micro_data_df[:10].to_html(
@@ -655,7 +656,7 @@ bounds=[micro_data_df.iloc[:,0].min()-0.01, 1.25*micro_data_df.iloc[:,0].max()]
 big_plots=True
 user_terms=3
 graphs=False
-dependence = 'independent'
+dependence = 'dependent'
 file_name = f'{name}.SIPmath'
 micro_data_df[[name]].apply(make_csv_graph,
                 probs=probs,
