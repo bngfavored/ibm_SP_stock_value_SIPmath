@@ -26,6 +26,8 @@ from streamlit_bokeh_events import streamlit_bokeh_events
 from microprediction import MicroWriter
 warnings.filterwarnings('ignore')
 sipmath_name = "IBM Stock Value"
+stock_stream_name = 'quick_yarx_ibm.json'
+beta = 0.85
 main_title = f'One Hour Ahead Stochastic {sipmath_name} Predictions'
 st.set_page_config(page_title=f"microprediction: {main_title}", page_icon=None,
                    layout="wide", initial_sidebar_state="auto", menu_items=None)
@@ -112,10 +114,9 @@ def remove_outliers(data):
     filtered_data = [x for x in data if lower_bound <= x <= upper_bound]
     return filtered_data
 
-def micropredictions_stock():
+def micropredictions_stock(stream_name = stock_stream_name):
     CYMBALO_COYOTE="e0a0c29acbf143899df20a20ceaf3556"
     mw = MicroWriter(write_key=CYMBALO_COYOTE)
-    stream_name = 'quick_yarx_ibm.json'
     samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
     data = pd.DataFrame(remove_outliers(samples), columns=[sipmath_name])
     # step = 1 / data.shape[0]
@@ -221,7 +222,7 @@ def plot(m, big_plots=None, csv=None, term=None, name=None, key=None):
                                 c='darkblue')
                     ax.patch.set_facecolor('white')
                     ax.axes.yaxis.set_ticks([])
-                    ax.set(title=sipmath_name, xlabel='Tens of BPS')
+                    ax.set(title=sipmath_name, xlabel='Basis Points')
                     newax = fig.add_axes([0.5,0.5,0.5,0.5], anchor=(0.59, 0.15), zorder=1)
                     newax.imshow(im)
                     newax.axis('off')
@@ -300,7 +301,8 @@ def convert_to_JSON(input_df,
                     bounds,
                     term_saved,
                     probs,
-                    quantile_corr_matrix ):
+                    quantile_corr_matrix,
+                    seeds ):
 
     PySIP.Json(input_df,
                filename,
@@ -310,7 +312,8 @@ def convert_to_JSON(input_df,
                bounds=bounds,
                term_saved=term_saved,
                probs=probs,
-               quantile_corr_matrix=quantile_corr_matrix
+               quantile_corr_matrix=quantile_corr_matrix,
+               seeds=seeds
                )
 
     with open(filename) as f:
@@ -636,15 +639,43 @@ def make_csv_graph(series,
 # col_name = 'Stock_Value'
 # micro_data = get_micropredictions()
 # micro_data_df = pd.DataFrame([ p for p in micro_data if p > 0.01 ], columns=[col_name])
-print('descirbe:')
-micro_data_df = pd.concat([micropredictions_S_P().describe().loc[['25%', '50%','75%']], micropredictions_stock().describe().loc[['25%', '50%','75%']]], axis=1)
+SP_data_stats = micropredictions_S_P().describe()
+stock_data_stats = micropredictions_stock().describe()
+micro_data_df = pd.concat([SP_data_stats.loc[['25%', '50%','75%']], 
+                           stock_data_stats.loc[['25%', '50%','75%']]], 
+                           axis=1)
 micro_data_df.index = [0.25, 0.5, 0.75]
-print(micro_data_df)
+covariance = beta*stock_data_stats.loc['std'].iloc[0]*stock_data_stats.loc['std'].iloc[0]*SP_data_stats.loc['std'].iloc[0]*SP_data_stats.loc['std'].iloc[0]
+micro_data_df = micro_data_df*10
 # micro_data_df = get_nyc_data()
 # print(micro_data_df.dtypes)
 # print(micro_data_df.dtypes)
 micro_data_df.columns = micro_data_df.columns.str.replace(' |&', '_')
 name = micro_data_df.columns[-1]
+seeds = [
+            {
+                "name": "hdr1",
+                "function": "HDR_2_0",
+                "arguments": {
+                    "counter": "PM_Index",
+                    "entity": 1,
+                    "varId": 0,
+                    "seed3": 0,
+                    "seed4": 0
+                }
+            },
+            {
+                "name": "hdr2",
+                "function": "HDR_2_0",
+                "arguments": {
+                    "counter": "PM_Index",
+                    "entity": 1,
+                    "varId": 1,
+                    "seed3": 0,
+                    "seed4": 0
+                }
+            }
+        ]
 # table_container.subheader(f"Preview for {name}")
 # table_container.write(micro_data_df[:10].to_html(
 #     index=False), unsafe_allow_html=True)
@@ -665,8 +696,8 @@ micro_data_df[[name]].apply(make_csv_graph,
                 big_plots=big_plots,
                 user_terms=user_terms,
                 graphs=graphs)
-corrs_data = [[1,None],[0.85,1]]            
-correlation_df = pd.DataFrame(corrs_data,columns=["S&P", name],index=["S&P", name])
+corrs_data = [[1,None],[covariance,1]]            
+correlation_df = pd.DataFrame(corrs_data,columns=micro_data_df.columns,index=micro_data_df.columns)
 text_container.markdown('''
     <p class="big-font"></p>''', unsafe_allow_html=True)
 text_container.markdown('''
@@ -686,7 +717,8 @@ convert_to_JSON(micro_data_df,
                 bounds,
                 user_terms,
                 probs,
-                correlation_df)
+                correlation_df,
+                seeds)
      
 copy_button = Button(label=f"Copy {file_name} to clipboard.")
 with open(file_name, 'rb') as f:
