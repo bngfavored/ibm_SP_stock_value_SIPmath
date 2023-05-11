@@ -28,6 +28,7 @@ warnings.filterwarnings('ignore')
 sipmath_name = "IBM Stock Value"
 stock_stream_name = 'quick_yarx_ibm.json'
 beta = 0.85
+var_id = 1
 main_title = f'One Hour Ahead Stochastic {sipmath_name} Predictions'
 st.set_page_config(page_title=f"microprediction: {main_title}", page_icon=None,
                    layout="wide", initial_sidebar_state="auto", menu_items=None)
@@ -670,7 +671,7 @@ seeds = [
                 "arguments": {
                     "counter": "PM_Index",
                     "entity": 1,
-                    "varId": 1,
+                    "varId": var_id,
                     "seed3": 0,
                     "seed4": 0
                 }
