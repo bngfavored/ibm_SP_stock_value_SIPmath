@@ -119,7 +119,7 @@ def micropredictions_stock(stream_name = stock_stream_name):
     CYMBALO_COYOTE="e0a0c29acbf143899df20a20ceaf3556"
     mw = MicroWriter(write_key=CYMBALO_COYOTE)
     samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
-    data = pd.DataFrame(remove_outliers(samples), columns=[sipmath_name])
+    data = pd.DataFrame(remove_outliers(samples), columns=[sipmath_name])*10
     # step = 1 / data.shape[0]
     # data.index = (data.index + 1)*step
     return data
@@ -129,7 +129,7 @@ def micropredictions_S_P():
     mw = MicroWriter(write_key=HEBDOMAD_LEECH)
     stream_name = 'rdps_spy.json'
     samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
-    data = pd.DataFrame(remove_outliers(samples), columns=["S&P"])
+    data = pd.DataFrame(remove_outliers(samples), columns=["S&P"])*10
     # step = 1 / data.shape[0]
     # data.index = (data.index + 1)*step
     return data
@@ -647,7 +647,6 @@ micro_data_df = pd.concat([SP_data_stats.loc[['25%', '50%','75%']],
                            axis=1)
 micro_data_df.index = [0.25, 0.5, 0.75]
 covariance = beta*stock_data_stats.loc['std'].iloc[0]*stock_data_stats.loc['std'].iloc[0]*SP_data_stats.loc['std'].iloc[0]*SP_data_stats.loc['std'].iloc[0]
-micro_data_df = micro_data_df*10
 # micro_data_df = get_nyc_data()
 # print(micro_data_df.dtypes)
 # print(micro_data_df.dtypes)
