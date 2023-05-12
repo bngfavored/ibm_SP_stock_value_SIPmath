@@ -27,7 +27,7 @@ from microprediction import MicroWriter
 warnings.filterwarnings('ignore')
 sipmath_name = "IBM Stock Value"
 stock_stream_name = 'quick_yarx_ibm.json'
-corr = 0.2
+corr = 0.24
 var_id = 1
 main_title = f'One Hour Ahead Stochastic {sipmath_name} Predictions'
 st.set_page_config(page_title=f"microprediction: {main_title}", page_icon=None,
