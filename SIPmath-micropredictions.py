@@ -27,7 +27,7 @@ from microprediction import MicroWriter
 warnings.filterwarnings('ignore')
 sipmath_name = "IBM Stock Value"
 stock_stream_name = 'quick_yarx_ibm.json'
-beta = 0.85
+corr = 0.2
 var_id = 1
 main_title = f'One Hour Ahead Stochastic {sipmath_name} Predictions'
 st.set_page_config(page_title=f"microprediction: {main_title}", page_icon=None,
@@ -119,7 +119,7 @@ def micropredictions_stock(stream_name = stock_stream_name):
     CYMBALO_COYOTE="e0a0c29acbf143899df20a20ceaf3556"
     mw = MicroWriter(write_key=CYMBALO_COYOTE)
     samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
-    data = pd.DataFrame(remove_outliers(samples), columns=[sipmath_name])*10
+    data = pd.DataFrame(remove_outliers(samples), columns=[sipmath_name])
     # step = 1 / data.shape[0]
     # data.index = (data.index + 1)*step
     return data
@@ -129,7 +129,7 @@ def micropredictions_S_P():
     mw = MicroWriter(write_key=HEBDOMAD_LEECH)
     stream_name = 'rdps_spy.json'
     samples = mw.get_own_predictions(name=stream_name,delay=mw.DELAYS[-1], strip=True, consolidate=True)
-    data = pd.DataFrame(remove_outliers(samples), columns=["S&P"])*10
+    data = pd.DataFrame(remove_outliers(samples), columns=["S&P"])
     # step = 1 / data.shape[0]
     # data.index = (data.index + 1)*step
     return data
@@ -305,9 +305,9 @@ def convert_to_JSON(input_df,
                     quantile_corr_matrix,
                     seeds ):
 
-    PySIP.Json(input_df,
-               filename,
-               author,
+    PySIP.Json(SIPdata=input_df,
+               file_name=filename,
+               author=author,
                dependence=dependence,
                boundedness=boundedness,
                bounds=bounds,
@@ -640,13 +640,14 @@ def make_csv_graph(series,
 # col_name = 'Stock_Value'
 # micro_data = get_micropredictions()
 # micro_data_df = pd.DataFrame([ p for p in micro_data if p > 0.01 ], columns=[col_name])
-SP_data_stats = micropredictions_S_P().describe()
-stock_data_stats = micropredictions_stock().describe()
+SP_data = micropredictions_S_P()
+stock_data = micropredictions_stock()
+SP_data_stats = SP_data.describe()
+stock_data_stats = stock_data.describe()
 micro_data_df = pd.concat([SP_data_stats.loc[['25%', '50%','75%']], 
                            stock_data_stats.loc[['25%', '50%','75%']]], 
-                           axis=1)
+                           axis=1)*10
 micro_data_df.index = [0.25, 0.5, 0.75]
-covariance = beta*stock_data_stats.loc['std'].iloc[0]*stock_data_stats.loc['std'].iloc[0]*SP_data_stats.loc['std'].iloc[0]*SP_data_stats.loc['std'].iloc[0]
 # micro_data_df = get_nyc_data()
 # print(micro_data_df.dtypes)
 # print(micro_data_df.dtypes)
@@ -696,8 +697,9 @@ micro_data_df[[name]].apply(make_csv_graph,
                 big_plots=big_plots,
                 user_terms=user_terms,
                 graphs=graphs)
-corrs_data = [[1,None],[covariance,1]]            
+corrs_data = [[1,None],[corr,1]]            
 correlation_df = pd.DataFrame(corrs_data,columns=micro_data_df.columns,index=micro_data_df.columns)
+print('correlation_df is ', correlation_df)
 text_container.markdown('''
     <p class="big-font"></p>''', unsafe_allow_html=True)
 text_container.markdown('''
