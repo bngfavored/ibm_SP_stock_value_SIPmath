@@ -15,6 +15,7 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import os
 import io
+import time
 import copy as cp
 import altair as alt
 import base64
@@ -618,6 +619,7 @@ def make_csv_graph(series,
                    big_plots,
                    user_terms,
                    graphs):
+    print('I am running.')
     if big_plots:
         graphs_container.markdown(
             f"<div id='linkto_head'></div>", unsafe_allow_html=True)
