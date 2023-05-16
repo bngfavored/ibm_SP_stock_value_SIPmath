@@ -15,7 +15,6 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import os
 import io
-import time
 import copy as cp
 import altair as alt
 import base64
