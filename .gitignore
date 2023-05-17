@@ -136,3 +136,5 @@ dmypy.json
 
 .streamlit/
 .vscode/
+Dockerfile
+.dockerignore

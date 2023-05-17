@@ -691,13 +691,13 @@ user_terms=3
 graphs=False
 dependence = 'dependent'
 file_name = f'{name}.SIPmath'
-micro_data_df[[name]].apply(make_csv_graph,
-                probs=probs,
-                boundedness=boundedness,
-                bounds=bounds,
-                big_plots=big_plots,
-                user_terms=user_terms,
-                graphs=graphs)
+# micro_data_df[[name]].apply(make_csv_graph,
+#                 probs=probs,
+#                 boundedness=boundedness,
+#                 bounds=bounds,
+#                 big_plots=big_plots,
+#                 user_terms=user_terms,
+#                 graphs=graphs)
 corrs_data = [[1,None],[corr,1]]            
 correlation_df = pd.DataFrame(corrs_data,columns=micro_data_df.columns,index=micro_data_df.columns)
 print('correlation_df is ', correlation_df)
